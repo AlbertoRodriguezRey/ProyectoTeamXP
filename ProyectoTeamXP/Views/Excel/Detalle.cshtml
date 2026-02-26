@@ -1,0 +1,158 @@
+@model ProyectoTeamXP.Models.ClientePerfil
+
+@{
+    ViewData["Title"] = "Detalle del Cliente";
+    var medidas = ViewBag.Medidas as List<ProyectoTeamXP.Models.MedidaCorporal>;
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-person-badge"></i> @Model.NombreCompleto
+                </h1>
+                <div>
+                    <a asp-action="ExportarExcel" asp-route-clienteId="@Model.Id" class="btn btn-success">
+                        <i class="bi bi-download"></i> Exportar Excel
+                    </a>
+                    <a asp-action="ListarClientes" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+
+            <!-- Perfil -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Perfil del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> @Model.NombreCompleto</p>
+                            <p><strong>Edad:</strong> @(Model.Edad?.ToString() ?? "N/A")</p>
+                            <p><strong>Peso Inicial:</strong> @(Model.PesoInicial?.ToString() ?? "N/A") kg</p>
+                            <p><strong>Fecha de Inicio:</strong> @(Model.FechaInicioPrograma?.ToString("dd/MM/yyyy") ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Objetivos:</strong> @(Model.Objetivos ?? "N/A")</p>
+                            <p><strong>Pasos:</strong> @(Model.ObjetivoPasos ?? "N/A")</p>
+                            <p><strong>Cardio:</strong> @(Model.ObjetivoCardio ?? "N/A")</p>
+                            <p><strong>Suplementación:</strong> @(Model.Suplementacion ?? "N/A")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Macros -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Macronutrientes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var macro in Model.Macros.OrderBy(m => m.TipoDia))
+                        {
+                            <div class="col-md-6">
+                                <h6 class="text-uppercase">@macro.TipoDia</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Proteína:</strong> @(macro.Proteina?.ToString() ?? "0")g</li>
+                                    <li><strong>Grasa:</strong> @(macro.Grasa?.ToString() ?? "0")g</li>
+                                    <li><strong>Carbohidratos:</strong> @(macro.Carbohidratos?.ToString() ?? "0")g</li>
+                                    <li><strong>Calorías:</strong> @(macro.Calorias?.ToString() ?? "0") kcal</li>
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medidas Corporales -->
+            @if (medidas != null && medidas.Any())
+            {
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-rulers"></i> Medidas Corporales</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Semana</th>
+                                        <th>Fecha</th>
+                                        <th>Pecho</th>
+                                        <th>Brazo</th>
+                                        <th>Cintura (sobre ombligo)</th>
+                                        <th>Ombligo</th>
+                                        <th>Cintura (bajo ombligo)</th>
+                                        <th>Cadera</th>
+                                        <th>Muslos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var medida in medidas)
+                                    {
+                                        <tr>
+                                            <td>@medida.NumeroSemana</td>
+                                            <td>@(medida.Fecha?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                                            <td>@(medida.Pecho?.ToString() ?? "-") cm</td>
+                                            <td>@(medida.Brazo?.ToString() ?? "-") cm</td>
+                                            <td>@(medida.CinturaSobreOmbligo?.ToString() ?? "-") cm</td>
+                                            <td>@(medida.CinturaOmbligo?.ToString() ?? "-") cm</td>
+                                            <td>@(medida.CinturaBajoOmbligo?.ToString() ?? "-") cm</td>
+                                            <td>@(medida.Cadera?.ToString() ?? "-") cm</td>
+                                            <td>@(medida.Muslos?.ToString() ?? "-") cm</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Seguimiento Diario -->
+            @if (Model.SeguimientoDiario.Any())
+            {
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Seguimiento Diario (últimos 10 días)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Peso</th>
+                                        <th>Entreno</th>
+                                        <th>Rendimiento</th>
+                                        <th>Pasos</th>
+                                        <th>Sueño</th>
+                                        <th>Calorías</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var seg in Model.SeguimientoDiario.OrderByDescending(s => s.Fecha).Take(10))
+                                    {
+                                        <tr>
+                                            <td>@seg.Fecha.ToString("dd/MM/yyyy")</td>
+                                            <td>@(seg.Peso?.ToString() ?? "-") kg</td>
+                                            <td>@(seg.DiaEntreno ?? "-")</td>
+                                            <td>@(seg.RendimientoSesion ?? "-")</td>
+                                            <td>@(seg.PasosRealizados?.ToString() ?? "-")</td>
+                                            <td>@(seg.HorasSueno?.ToString() ?? "-")h</td>
+                                            <td>@(seg.TotalCalorias?.ToString() ?? "-") kcal</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

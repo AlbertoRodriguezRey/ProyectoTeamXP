@@ -1,0 +1,108 @@
+/* ========================================
+   TEAMXP - COMPONENTES REUTILIZABLES
+   Usa las variables de site.css
+   ======================================== */
+
+/* ---- Stats grid ---- */
+.stats { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; }
+.stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    flex: 1 1 200px;
+    max-width: 260px;
+    transition: all .3s;
+}
+.stat:hover { border-color: var(--primary); transform: translateY(-4px); }
+.stat-icon { font-size: 2rem; color: var(--primary); margin-bottom: .75rem; }
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1;
+}
+.stat-label {
+    font-size: .8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: .4rem;
+}
+
+/* ---- Feature cards ---- */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.feature {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: all .3s;
+    position: relative;
+    overflow: hidden;
+}
+.feature::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 3px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transition: transform .3s;
+}
+.feature:hover::before { transform: scaleX(1); }
+.feature:hover { border-color: var(--primary); transform: translateY(-4px); }
+.feature-icon {
+    width: 50px; height: 50px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+    color: #fff;
+    margin-bottom: 1.25rem;
+}
+.feature h3 { font-size: 1.1rem; letter-spacing: 1px; margin-bottom: .6rem; }
+.feature p { color: var(--text-muted); font-size: .9rem; line-height: 1.6; margin: 0; }
+
+/* ---- CTA band ---- */
+.cta-band {
+    background: var(--primary);
+    padding: 3rem 1.5rem;
+    text-align: center;
+    border-radius: 16px;
+    color: #fff;
+}
+.cta-band h2 { margin-bottom: .75rem; }
+.cta-band p { opacity: .9; margin-bottom: 1.5rem; max-width: 600px; margin-inline: auto; }
+.cta-band .btn { background: #fff; color: var(--primary); font-weight: 800; }
+.cta-band .btn:hover { background: var(--bg); color: #fff; }
+
+/* ---- Section titles ---- */
+.section-badge {
+    display: inline-block;
+    background: rgba(0,102,255,.15);
+    color: var(--primary);
+    padding: .35rem 1rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: .75rem;
+}
+
+/* ---- Blue divider bar (like TeamXipi) ---- */
+.blue-bar {
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--primary));
+}
+
+/* ---- Table dark theme ---- */
+.table-dark-custom {
+    --bs-table-bg: var(--bg-card);
+    --bs-table-border-color: var(--border);
+    color: var(--text);
+}
+.table-dark-custom thead { background: var(--primary); color: #fff; }
+.table-dark-custom tbody tr:hover { background: rgba(0,102,255,.06); }

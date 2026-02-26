@@ -1,0 +1,84 @@
+@model ProyectoTeamXP.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Registrarse";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card auth-card--wide">
+        <div class="auth-card-body">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <h2>Únete a TeamXP</h2>
+                <p>Crea tu cuenta y empieza hoy</p>
+            </div>
+
+            @if (ViewData["ERROR"] != null)
+            {
+                <div class="auth-msg auth-msg--error">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>@ViewData["ERROR"]</span>
+                </div>
+            }
+
+            <form asp-action="Register" method="post">
+                <div class="auth-field">
+                    <label asp-for="NombreCompleto" class="auth-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                        <input asp-for="NombreCompleto" class="form-control" placeholder="Tu nombre completo" autocomplete="name" />
+                    </div>
+                    <span asp-validation-for="NombreCompleto" class="auth-validation"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label asp-for="Email" class="auth-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                        <input asp-for="Email" class="form-control" placeholder="tu@email.com" autocomplete="email" />
+                    </div>
+                    <span asp-validation-for="Email" class="auth-validation"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label asp-for="Password" class="auth-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input asp-for="Password" class="form-control" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+                    </div>
+                    <span asp-validation-for="Password" class="auth-validation"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label asp-for="ConfirmPassword" class="auth-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-shield-lock-fill"></i></span>
+                        <input asp-for="ConfirmPassword" class="form-control" placeholder="Repite tu contraseña" autocomplete="new-password" />
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="auth-validation"></span>
+                </div>
+
+                <div class="auth-check">
+                    <input asp-for="AceptaTerminos" class="form-check-input" />
+                    <label asp-for="AceptaTerminos">Acepto los términos y condiciones</label>
+                    <span asp-validation-for="AceptaTerminos" class="auth-validation"></span>
+                </div>
+
+                <button type="submit" class="auth-btn auth-btn--register">
+                    <i class="bi bi-person-plus-fill me-2"></i> Crear Cuenta
+                </button>
+
+                <div class="auth-bottom">
+                    ¿Ya tienes cuenta?
+                    <a asp-action="Login">Inicia sesión</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

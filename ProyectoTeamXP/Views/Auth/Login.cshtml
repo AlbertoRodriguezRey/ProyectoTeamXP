@@ -1,0 +1,72 @@
+@model ProyectoTeamXP.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-card-body">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <h2>Bienvenido</h2>
+                <p>Inicia sesión en TeamXP</p>
+            </div>
+
+            @if (ViewData["ERROR"] != null)
+            {
+                <div class="auth-msg auth-msg--error">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>@ViewData["ERROR"]</span>
+                </div>
+            }
+            @if (ViewData["MENSAJE"] != null)
+            {
+                <div class="auth-msg auth-msg--ok">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>@ViewData["MENSAJE"]</span>
+                </div>
+            }
+
+            <form asp-action="Login" method="post">
+                <div class="auth-field">
+                    <label asp-for="Email" class="auth-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                        <input asp-for="Email" class="form-control" placeholder="tu@email.com" autocomplete="email" />
+                    </div>
+                    <span asp-validation-for="Email" class="auth-validation"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label asp-for="Password" class="auth-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input asp-for="Password" class="form-control" placeholder="••••••••" autocomplete="current-password" />
+                    </div>
+                    <span asp-validation-for="Password" class="auth-validation"></span>
+                </div>
+
+                <div class="auth-check">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe">Recordarme</label>
+                </div>
+
+                <button type="submit" class="auth-btn auth-btn--login">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                </button>
+
+                <div class="auth-bottom">
+                    ¿No tienes cuenta?
+                    <a asp-action="Register">Regístrate aquí</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

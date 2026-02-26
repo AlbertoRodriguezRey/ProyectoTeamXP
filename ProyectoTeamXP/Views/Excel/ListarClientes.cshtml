@@ -1,0 +1,90 @@
+@model IEnumerable<ProyectoTeamXP.Models.ClientePerfil>
+
+@{
+    ViewData["Title"] = "Lista de Clientes";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-people"></i> Clientes con Seguimiento
+                </h1>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay clientes registrados. Importa un Excel para comenzar.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Edad</th>
+                                <th>Peso Inicial</th>
+                                <th>Fecha Inicio</th>
+                                <th>Días de Seguimiento</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cliente in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@cliente.NombreCompleto</strong>
+                                    </td>
+                                    <td>@(cliente.Edad?.ToString() ?? "N/A")</td>
+                                    <td>
+                                        @if (cliente.PesoInicial.HasValue)
+                                        {
+                                            <span class="badge bg-primary">@cliente.PesoInicial.Value kg</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @(cliente.FechaInicioPrograma?.ToString("dd/MM/yyyy") ?? "N/A")
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@cliente.SeguimientoDiario.Count días</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Detalle" asp-route-clienteId="@cliente.Id" class="btn btn-sm btn-info">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </a>
+                                            <a asp-action="ExportarExcel" asp-route-clienteId="@cliente.Id" class="btn btn-sm btn-success">
+                                                <i class="bi bi-download"></i> Exportar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+            cursor: pointer;
+        }
+    </style>
+}

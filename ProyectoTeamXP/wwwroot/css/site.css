@@ -1,0 +1,344 @@
+/* ========================================
+   TEAMXP - ESTILOS GENERALES
+   Negro + Azul Eléctrico
+   ======================================== */
+
+/* ---- Variables propias ---- */
+:root {
+    --primary: #0066ff;
+    --primary-dark: #0052cc;
+    --primary-light: #3399ff;
+    --bg: #000000;
+    --bg-card: #0d0d0d;
+    --bg-elevated: #141414;
+    --text: #ffffff;
+    --text-muted: #999999;
+    --success: #00e676;
+    --danger: #ff3d71;
+    --border: rgba(0, 102, 255, 0.15);
+
+    /* ---- Sobrescribir variables internas de Bootstrap 5 ---- */
+    /* Sin esto, Bootstrap usa #212529 (casi negro) en muchos componentes */
+    --bs-body-color:          #ffffff;
+    --bs-body-color-rgb:      255, 255, 255;
+    --bs-body-bg:             #000000;
+    --bs-body-bg-rgb:         0, 0, 0;
+
+    --bs-secondary-color:     #999999;
+    --bs-secondary-color-rgb: 153, 153, 153;
+    --bs-tertiary-color:      #666666;
+
+    --bs-emphasis-color:      #ffffff;
+    --bs-emphasis-color-rgb:  255, 255, 255;
+
+    --bs-heading-color:       #ffffff;
+
+    --bs-link-color:          #0066ff;
+    --bs-link-color-rgb:      0, 102, 255;
+    --bs-link-hover-color:    #3399ff;
+
+    --bs-border-color:        rgba(0, 102, 255, 0.15);
+    --bs-border-color-translucent: rgba(0, 102, 255, 0.15);
+
+    --bs-card-bg:             #0d0d0d;
+    --bs-card-color:          #ffffff;
+    --bs-card-border-color:   rgba(0, 102, 255, 0.15);
+    --bs-card-cap-bg:         #141414;
+
+    --bs-table-bg:            #0d0d0d;
+    --bs-table-color:         #ffffff;
+    --bs-table-border-color:  rgba(0, 102, 255, 0.15);
+    --bs-table-striped-bg:    #141414;
+    --bs-table-hover-bg:      rgba(0, 102, 255, 0.06);
+
+    --bs-input-bg:            #141414;
+    --bs-input-color:         #ffffff;
+    --bs-input-border-color:  rgba(0, 102, 255, 0.15);
+    --bs-input-focus-border-color: #0066ff;
+    --bs-input-placeholder-color: #555555;
+
+    --bs-dropdown-bg:         #141414;
+    --bs-dropdown-color:      #ffffff;
+    --bs-dropdown-border-color: rgba(0, 102, 255, 0.15);
+    --bs-dropdown-link-color: #ffffff;
+    --bs-dropdown-link-hover-bg: #0066ff;
+    --bs-dropdown-link-hover-color: #ffffff;
+    --bs-dropdown-item-color: #ffffff;
+
+    --bs-modal-bg:            #0d0d0d;
+    --bs-modal-color:         #ffffff;
+    --bs-modal-border-color:  rgba(0, 102, 255, 0.3);
+
+    --bs-list-group-bg:       #0d0d0d;
+    --bs-list-group-color:    #ffffff;
+    --bs-list-group-border-color: rgba(0, 102, 255, 0.15);
+    --bs-list-group-action-color: #ffffff;
+
+    --bs-pagination-bg:       #0d0d0d;
+    --bs-pagination-color:    #ffffff;
+    --bs-pagination-border-color: rgba(0, 102, 255, 0.15);
+    --bs-pagination-hover-bg: rgba(0, 102, 255, 0.15);
+    --bs-pagination-hover-color: #ffffff;
+    --bs-pagination-active-bg: #0066ff;
+    --bs-pagination-active-color: #ffffff;
+    --bs-pagination-disabled-color: #555555;
+    --bs-pagination-disabled-bg: #0a0a0a;
+}
+
+/* ---- BASE ---- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* body layout: gestionado por clases Bootstrap en _Layout (d-flex flex-column min-vh-100) */
+body {
+    font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ---- TIPOGRAFÍA ---- */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    line-height: 1.2;
+}
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.6rem, 4vw, 2.5rem); }
+h3 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
+
+a { color: var(--primary); transition: color .25s; }
+a:hover { color: var(--primary-light); }
+
+/* ---- NAVBAR ---- */
+.navbar {
+    background: var(--bg) !important;
+    padding: .9rem 0;
+    border-bottom: 2px solid var(--primary);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+.navbar.scrolled {
+    background: rgba(0,0,0,.95) !important;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(0,102,255,.25);
+}
+.navbar-brand {
+    font-weight: 900;
+    font-size: 1.6rem;
+    color: var(--text) !important;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    gap: .4rem;
+    display: flex;
+    align-items: center;
+}
+.navbar-brand i { color: var(--primary); font-size: 1.8rem; }
+
+.nav-link {
+    color: var(--text) !important;
+    font-weight: 600;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: .5rem 1rem !important;
+    position: relative;
+    transition: color .25s;
+}
+.nav-link::after {
+    content: '';
+    position: absolute;
+    left: 1rem; right: 1rem; bottom: 0;
+    height: 2px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transition: transform .3s;
+}
+.nav-link:hover { color: var(--primary) !important; }
+.nav-link:hover::after { transform: scaleX(1); }
+
+.dropdown-menu {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.6);
+}
+.dropdown-item { color: var(--text); font-size: .9rem; }
+.dropdown-item:hover { background: var(--primary); color: #fff; }
+.dropdown-item-text small { color: var(--text-muted); }
+.dropdown-divider { border-color: var(--border); }
+
+/* ---- BOTONES ---- */
+.btn {
+    font-weight: 700;
+    border-radius: 6px;
+    transition: all .3s;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-size: .85rem;
+}
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,102,255,.35);
+}
+.btn-primary:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 6px 20px rgba(0,102,255,.5);
+    transform: translateY(-2px);
+}
+.btn-outline-primary {
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    background: transparent;
+}
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: #fff;
+}
+.btn-success { background: var(--success); color: #000; }
+.btn-danger  { background: var(--danger);  color: #fff; }
+
+/* ---- CARDS ---- */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all .3s;
+}
+.card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 8px 30px rgba(0,102,255,.15);
+    transform: translateY(-4px);
+}
+
+/* ---- ALERTAS ---- */
+.alert {
+    border: none;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+.alert-success { background: rgba(0,230,118,.08); color: var(--success); border-color: var(--success); }
+.alert-danger  { background: rgba(255,61,113,.08); color: var(--danger);  border-color: var(--danger); }
+
+/* ---- FORMULARIOS (tema oscuro) ---- */
+.form-control, .form-select, textarea.form-control {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+}
+.form-control::placeholder { color: #555; }
+.form-control:focus, .form-select:focus, textarea.form-control:focus {
+    background: var(--bg-elevated);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0,102,255,.15);
+    color: var(--text);
+    outline: none;
+}
+.form-control[readonly] { opacity: .6; }
+
+/* ---- FOOTER ----
+.footer {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding: 1rem 0;
+    font-size: .85rem;
+}
+.footer h6 {
+    color: var(--text);
+    font-size: .8rem;
+    margin-bottom: .6rem;
+    letter-spacing: 1px;
+}
+.footer a { color: var(--text-muted); text-decoration: none; font-size: .8rem; }
+.footer a:hover { color: var(--primary); }
+.footer ul { padding: 0; list-style: none; }
+.footer ul li { margin-bottom: .3rem; }
+.footer .copy-row { opacity: .6; font-size: .75rem; }
+
+/* ---- HERO ---- */
+.hero {
+    position: relative;
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(0,102,255,.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0,102,255,.08) 0%, transparent 50%),
+        var(--bg);
+}
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--primary));
+}
+.hero-title {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    line-height: 1.05;
+}
+.hero-subtitle {
+    font-size: clamp(1rem, 2vw, 1.4rem);
+    color: var(--text-muted);
+    max-width: 600px;
+}
+.hero-cta {
+    display: inline-block;
+    padding: .9rem 2.5rem;
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border: none;
+    text-decoration: none;
+    transition: all .3s;
+}
+.hero-cta:hover {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 0 25px rgba(0,102,255,.4);
+}
+.hero-cta span { margin-left: .5rem; }
+
+/* ---- ANIMACIONES ---- */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up     { animation: fadeUp .6s ease both; }
+.fade-up-d1  { animation: fadeUp .6s ease .15s both; }
+.fade-up-d2  { animation: fadeUp .6s ease .3s both; }
+.fade-up-d3  { animation: fadeUp .6s ease .45s both; }
+
+.fade-in-scroll { opacity: 0; transform: translateY(20px); transition: all .5s ease; }
+.fade-in-scroll.visible { opacity: 1; transform: translateY(0); }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 991px) {
+    .navbar-brand { font-size: 1.3rem; }
+    .nav-link::after { display: none; }
+}
+@media (max-width: 576px) {
+    .hero { min-height: 70vh; }
+}
+
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
