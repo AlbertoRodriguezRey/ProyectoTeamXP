@@ -183,37 +183,81 @@ public class ExcelImportExportService
         if (existentes.Any())
         {
             _context.Set<MedidaCorporal>().RemoveRange(existentes);
-            await _context.SaveChangesAsync(); // Guardar la eliminación primero
+            await _context.SaveChangesAsync();
         }
 
         // Buscar la fila donde empieza "MEDIDAS"
-        int filaInicio = 24;
-        int columnaInicio = 6; // Columna F (INICIO)
+        int filaInicio = -1;
+        for (int fila = 20; fila < 35; fila++)
+        {
+            for (int col = 1; col <= 10; col++)
+            {
+                var celda = worksheet.Cells[fila, col].Text?.Trim().ToUpper();
+                if (celda != null && celda.Contains("MEDIDAS"))
+                {
+                    filaInicio = fila;
+                    break;
+                }
+            }
+            if (filaInicio > 0) break;
+        }
 
-        var semanas = new[] { "INICIO", "SEMANA 2", "SEMANA 4", "SEMANA 6", "SEMANA 8", "SEMANA 10", "SEMANA 12" };
+        if (filaInicio == -1)
+            filaInicio = 24; // Valor por defecto
+
+        // Buscar la columna donde empiezan las medidas (buscar "INICIO")
+        int columnaInicio = -1;
+        for (int col = 1; col <= 15; col++)
+        {
+            var celda = worksheet.Cells[filaInicio, col].Text?.Trim().ToUpper();
+            if (celda == "INICIO")
+            {
+                columnaInicio = col;
+                break;
+            }
+        }
+
+        if (columnaInicio == -1)
+            columnaInicio = 5; // Columna E por defecto
+
         int medidasAgregadas = 0;
 
-        for (int col = 0; col < semanas.Length; col++)
+        // Leer las columnas de medidas (INICIO, SEMANA 2, SEMANA 4, etc.)
+        for (int colOffset = 0; colOffset < 7; colOffset++)
         {
-            int colIndex = columnaInicio + col;
-            var fecha = ParseFecha(worksheet.Cells[filaInicio + 1, colIndex].Text);
+            int colIndex = columnaInicio + colOffset;
+            
+            // Obtener la fecha de la fila siguiente al título
+            var fechaTexto = worksheet.Cells[filaInicio + 1, colIndex].Text?.Trim();
+            var fecha = ParseFecha(fechaTexto);
 
-            var medida = new MedidaCorporal
-            {
-                ClienteId = clienteId,
-                NumeroSemana = col,
-                Fecha = fecha,
-                Pecho = ParseDecimal(worksheet.Cells[filaInicio + 2, colIndex].Text),
-                Brazo = ParseDecimal(worksheet.Cells[filaInicio + 3, colIndex].Text),
-                CinturaSobreOmbligo = ParseDecimal(worksheet.Cells[filaInicio + 4, colIndex].Text),
-                CinturaOmbligo = ParseDecimal(worksheet.Cells[filaInicio + 5, colIndex].Text),
-                CinturaBajoOmbligo = ParseDecimal(worksheet.Cells[filaInicio + 6, colIndex].Text),
-                Cadera = ParseDecimal(worksheet.Cells[filaInicio + 7, colIndex].Text),
-                Muslos = ParseDecimal(worksheet.Cells[filaInicio + 8, colIndex].Text)
-            };
+            // Leer las medidas (las siguientes filas después de la fecha)
+            var pecho = ParseDecimal(worksheet.Cells[filaInicio + 2, colIndex].Text);
+            var brazo = ParseDecimal(worksheet.Cells[filaInicio + 3, colIndex].Text);
+            var cinturaSobre = ParseDecimal(worksheet.Cells[filaInicio + 4, colIndex].Text);
+            var cinturaOmbligo = ParseDecimal(worksheet.Cells[filaInicio + 5, colIndex].Text);
+            var cinturaBajo = ParseDecimal(worksheet.Cells[filaInicio + 6, colIndex].Text);
+            var cadera = ParseDecimal(worksheet.Cells[filaInicio + 7, colIndex].Text);
+            var muslos = ParseDecimal(worksheet.Cells[filaInicio + 8, colIndex].Text);
 
-            if (medida.Pecho.HasValue || medida.Brazo.HasValue || medida.CinturaOmbligo.HasValue)
+            // Solo agregar si hay al menos una medida
+            if (pecho.HasValue || brazo.HasValue || cinturaOmbligo.HasValue || 
+                cinturaSobre.HasValue || cinturaBajo.HasValue || cadera.HasValue || muslos.HasValue)
             {
+                var medida = new MedidaCorporal
+                {
+                    ClienteId = clienteId,
+                    NumeroSemana = colOffset,
+                    Fecha = fecha,
+                    Pecho = pecho,
+                    Brazo = brazo,
+                    CinturaSobreOmbligo = cinturaSobre,
+                    CinturaOmbligo = cinturaOmbligo,
+                    CinturaBajoOmbligo = cinturaBajo,
+                    Cadera = cadera,
+                    Muslos = muslos
+                };
+
                 _context.Set<MedidaCorporal>().Add(medida);
                 medidasAgregadas++;
             }
@@ -239,8 +283,23 @@ public class ExcelImportExportService
             await _context.SaveChangesAsync(); // Guardar la eliminación primero
         }
 
-        // La fila 39 tiene los encabezados del seguimiento
-        int filaInicio = 43; // Primera fila de datos (después de EJEMPLO)
+        // Buscar la fila donde están los encabezados del seguimiento
+        int filaEncabezados = -1;
+        for (int fila = 35; fila < 50; fila++)
+        {
+            var celda = worksheet.Cells[fila, 1].Text?.Trim().ToUpper();
+            if (celda == "SEMANA" || (celda != null && celda.Contains("SEMANA")))
+            {
+                filaEncabezados = fila;
+                break;
+            }
+        }
+
+        if (filaEncabezados == -1)
+            filaEncabezados = 39; // Valor por defecto
+
+        // La fila de datos empieza después de 3 filas: encabezados, línea vacía, línea vacía, EJEMPLO
+        int filaInicio = filaEncabezados + 4;
         int maxFilas = 200;
         int registrosAgregados = 0;
 
@@ -249,13 +308,20 @@ public class ExcelImportExportService
 
         for (int fila = filaInicio; fila < filaInicio + maxFilas; fila++)
         {
-            var semanaTexto = worksheet.Cells[fila, 1].Text;
-            var fechaTexto = worksheet.Cells[fila, 2].Text;
+            // Columna A (1) = SEMANA
+            var semanaTexto = worksheet.Cells[fila, 1].Text?.Trim();
+            
+            // Columna B (2) = FECHA
+            var fechaTexto = worksheet.Cells[fila, 2].Text?.Trim();
 
-            // Saltar filas vacías, fila de ejemplo o filas de resumen
-            if (string.IsNullOrWhiteSpace(fechaTexto) || 
+            // Saltar filas vacías, de ejemplo o de resumen
+            if (string.IsNullOrWhiteSpace(fechaTexto))
+                continue;
+                
+            if (semanaTexto != null && (
                 semanaTexto.ToUpper() == "EJEMPLO" ||
-                semanaTexto.ToUpper().Contains("RESUMEN"))
+                semanaTexto.ToUpper().Contains("RESUMEN") ||
+                semanaTexto.ToUpper() == "SEMANA Nº"))
                 continue;
 
             var fecha = ParseFecha(fechaTexto);
@@ -266,28 +332,45 @@ public class ExcelImportExportService
             if (fechasAgregadas.Contains(fecha.Value.Date))
                 continue;
 
+            // Leer datos de las columnas correspondientes
+            var pesoTexto = worksheet.Cells[fila, 3].Text?.Trim();
+            var horaTexto = worksheet.Cells[fila, 4].Text?.Trim();
+            var proteinaTexto = worksheet.Cells[fila, 5].Text?.Trim();
+            var grasaTexto = worksheet.Cells[fila, 6].Text?.Trim();
+            var carbsTexto = worksheet.Cells[fila, 7].Text?.Trim();
+            var caloriasTexto = worksheet.Cells[fila, 8].Text?.Trim();
+            var entrenoTexto = worksheet.Cells[fila, 9].Text?.Trim();
+            var rendimientoTexto = worksheet.Cells[fila, 10].Text?.Trim();
+            var pasosTexto = worksheet.Cells[fila, 11].Text?.Trim();
+            var cardioTexto = worksheet.Cells[fila, 12].Text?.Trim();
+            var suenoTexto = worksheet.Cells[fila, 13].Text?.Trim();
+            var calidadSuenoTexto = worksheet.Cells[fila, 14].Text?.Trim();
+            var apetitoTexto = worksheet.Cells[fila, 15].Text?.Trim();
+            var estresTexto = worksheet.Cells[fila, 16].Text?.Trim();
+            var notasTexto = worksheet.Cells[fila, 17].Text?.Trim();
+
             var seguimiento = new SeguimientoDiario
             {
                 ClienteId = clienteId,
                 NumeroSemana = ParseInt(semanaTexto),
                 Fecha = fecha.Value,
-                Peso = ParseDecimal(worksheet.Cells[fila, 3].Text),
-                HoraPesaje = ParseHora(worksheet.Cells[fila, 4].Text),
-                Proteina = ParseDecimal(worksheet.Cells[fila, 5].Text),
-                Grasa = ParseDecimal(worksheet.Cells[fila, 6].Text),
-                Carbohidratos = ParseDecimal(worksheet.Cells[fila, 7].Text),
-                TotalCalorias = ParseInt(worksheet.Cells[fila, 8].Text),
-                DiaEntreno = TruncateString(worksheet.Cells[fila, 9].Text, 100),
-                RendimientoSesion = TruncateString(worksheet.Cells[fila, 10].Text, 100),
-                PasosRealizados = ParseInt(worksheet.Cells[fila, 11].Text),
-                DuracionCardio = TruncateString(worksheet.Cells[fila, 12].Text, 50),
-                HorasSueno = ParseDecimal(worksheet.Cells[fila, 13].Text),
-                CalidadSueno = TruncateString(worksheet.Cells[fila, 14].Text, 50),
-                Apetito = TruncateString(worksheet.Cells[fila, 15].Text, 50),
-                NivelEstres = TruncateString(worksheet.Cells[fila, 16].Text, 50),
-                Notas = TruncateString(worksheet.Cells[fila, 17].Text, 500),
-                EntrenoRealizado = !string.IsNullOrWhiteSpace(worksheet.Cells[fila, 9].Text),
-                CardioRealizado = !string.IsNullOrWhiteSpace(worksheet.Cells[fila, 12].Text)
+                Peso = ParseDecimal(pesoTexto),
+                HoraPesaje = ParseHora(horaTexto),
+                Proteina = ParseDecimal(proteinaTexto),
+                Grasa = ParseDecimal(grasaTexto),
+                Carbohidratos = ParseDecimal(carbsTexto),
+                TotalCalorias = ParseInt(caloriasTexto),
+                DiaEntreno = TruncateString(entrenoTexto, 100),
+                RendimientoSesion = TruncateString(rendimientoTexto, 100),
+                PasosRealizados = ParseInt(pasosTexto),
+                DuracionCardio = TruncateString(cardioTexto, 50),
+                HorasSueno = ParseDecimal(suenoTexto),
+                CalidadSueno = TruncateString(calidadSuenoTexto, 50),
+                Apetito = TruncateString(apetitoTexto, 50),
+                NivelEstres = TruncateString(estresTexto, 50),
+                Notas = TruncateString(notasTexto, 500),
+                EntrenoRealizado = !string.IsNullOrWhiteSpace(entrenoTexto),
+                CardioRealizado = !string.IsNullOrWhiteSpace(cardioTexto)
             };
 
             _context.SeguimientoDiario.Add(seguimiento);
@@ -439,16 +522,39 @@ public class ExcelImportExportService
         // Eliminar texto adicional (kg, cm, etc.)
         value = value.Replace("kg", "").Replace("cm", "").Replace(" ", "").Trim();
 
-        // Reemplazar coma por punto para formato invariante
-        value = value.Replace(",", ".");
-
-        // Eliminar separadores de miles (puntos después del primer dígito)
-        // Pero mantener el punto decimal (el último)
-        var parts = value.Split('.');
-        if (parts.Length > 2)
+        // Si el valor contiene coma, podría ser separador decimal (español)
+        // Si contiene punto y coma, la coma es separador de miles
+        if (value.Contains(","))
         {
-            // Hay múltiples puntos, los primeros son separadores de miles
-            value = string.Join("", parts.Take(parts.Length - 1)) + "." + parts.Last();
+            // Contar puntos y comas
+            int puntosCount = value.Count(c => c == '.');
+            int comasCount = value.Count(c => c == ',');
+
+            if (puntosCount > 0 && comasCount > 0)
+            {
+                // Ambos presentes: formato europeo (1.234,56)
+                value = value.Replace(".", "").Replace(",", ".");
+            }
+            else if (comasCount == 1 && puntosCount == 0)
+            {
+                // Solo una coma: separador decimal español (70,2)
+                value = value.Replace(",", ".");
+            }
+            else if (comasCount > 1)
+            {
+                // Múltiples comas: separador de miles (1,234,567.89)
+                value = value.Replace(",", "");
+            }
+        }
+        else if (value.Contains("."))
+        {
+            // Solo puntos
+            var parts = value.Split('.');
+            if (parts.Length > 2)
+            {
+                // Múltiples puntos: separadores de miles (1.234.567)
+                value = string.Join("", parts.Take(parts.Length - 1)) + "." + parts.Last();
+            }
         }
 
         if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
@@ -462,7 +568,7 @@ public class ExcelImportExportService
         if (string.IsNullOrWhiteSpace(value))
             return null;
 
-        // Eliminar separadores de miles (punto y coma) y espacios
+        // Eliminar espacios y caracteres no numéricos excepto signos
         value = value.Replace(".", "").Replace(",", "").Replace(" ", "").Trim();
 
         // Eliminar caracteres no numéricos excepto el signo negativo
@@ -484,10 +590,27 @@ public class ExcelImportExportService
 
         value = value.Trim();
 
+        // Intentar parsear como número de Excel primero
+        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double oaDate))
+        {
+            try
+            {
+                return DateTime.FromOADate(oaDate);
+            }
+            catch
+            {
+                // No era una fecha de Excel
+            }
+        }
+
         var formatos = new[] { 
             "d/M/yyyy", "dd/MM/yyyy", "d-MMM-yyyy", "dd-MMM-yyyy",
-            "d MMMM yyyy", "dd MMMM yyyy", "d/M/yyyy", "M/d/yyyy",
-            "d MMM", "dd MMM", "d-MMM", "dd-MMM", "d MMM yyyy", "dd MMM yyyy"
+            "d MMMM yyyy", "dd MMMM yyyy", "M/d/yyyy",
+            "d MMM", "dd MMM", "d-MMM", "dd-MMM", 
+            "d MMM yyyy", "dd MMM yyyy",
+            "d-MMM-yyyy", "dd-MMM-yyyy",
+            "d ene", "d feb", "d mar", "d abr", "d may", "d jun",
+            "d jul", "d ago", "d sep", "d oct", "d nov", "d dic"
         };
 
         var culturas = new[] { 
@@ -503,7 +626,7 @@ public class ExcelImportExportService
                 if (DateTime.TryParseExact(value, formato, cultura, DateTimeStyles.None, out var result))
                 {
                     // Si no tiene año, usar el año actual
-                    if (result.Year == 1)
+                    if (result.Year == 1 || result.Year < 2000)
                         result = new DateTime(DateTime.Now.Year, result.Month, result.Day);
 
                     return result;
@@ -511,8 +634,21 @@ public class ExcelImportExportService
             }
         }
 
-        if (DateTime.TryParse(value, out var fecha))
+        // Intentar parse general con cultura española
+        if (DateTime.TryParse(value, new CultureInfo("es-ES"), DateTimeStyles.None, out var fecha))
+        {
+            if (fecha.Year < 2000)
+                fecha = new DateTime(DateTime.Now.Year, fecha.Month, fecha.Day);
             return fecha;
+        }
+
+        // Intentar parse general con cultura inglesa
+        if (DateTime.TryParse(value, new CultureInfo("en-US"), DateTimeStyles.None, out fecha))
+        {
+            if (fecha.Year < 2000)
+                fecha = new DateTime(DateTime.Now.Year, fecha.Month, fecha.Day);
+            return fecha;
+        }
 
         return null;
     }
@@ -522,8 +658,42 @@ public class ExcelImportExportService
         if (string.IsNullOrWhiteSpace(value))
             return null;
 
+        value = value.Trim();
+
+        // Intentar parsear directamente como TimeSpan
         if (TimeSpan.TryParse(value, out var result))
             return result;
+
+        // Intentar parsear como HH:mm
+        var partes = value.Split(':');
+        if (partes.Length == 2)
+        {
+            if (int.TryParse(partes[0], out int horas) && int.TryParse(partes[1], out int minutos))
+            {
+                if (horas >= 0 && horas < 24 && minutos >= 0 && minutos < 60)
+                {
+                    return new TimeSpan(horas, minutos, 0);
+                }
+            }
+        }
+
+        // Intentar parsear como número decimal (Excel puede guardar horas así)
+        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double horaDecimal))
+        {
+            try
+            {
+                // Excel guarda horas como fracciones de día
+                if (horaDecimal < 1.0)
+                {
+                    var totalMinutos = (int)(horaDecimal * 24 * 60);
+                    return TimeSpan.FromMinutes(totalMinutos);
+                }
+            }
+            catch
+            {
+                // No era una hora válida
+            }
+        }
 
         return null;
     }

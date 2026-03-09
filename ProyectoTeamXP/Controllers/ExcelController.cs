@@ -27,23 +27,41 @@ public class ExcelController : Controller
     {
         if (archivo == null || archivo.Length == 0)
         {
-            TempData["Error"] = "Por favor selecciona un archivo Excel válido";
+            TempData["Error"] = "Por favor selecciona un archivo válido";
             return RedirectToAction("Index");
         }
 
-        if (!archivo.FileName.EndsWith(".xlsx") && !archivo.FileName.EndsWith(".xls"))
+        var extension = Path.GetExtension(archivo.FileName).ToLower();
+        if (extension != ".xlsx" && extension != ".xls" && extension != ".csv")
         {
-            TempData["Error"] = "El archivo debe ser un Excel (.xlsx o .xls)";
+            TempData["Error"] = "El archivo debe ser un Excel (.xlsx, .xls) o CSV (.csv)";
             return RedirectToAction("Index");
         }
 
         try
         {
-            // Obtener el usuario actual (ajusta según tu sistema de autenticación)
+            // Obtener el usuario actual
             var usuarioId = ObtenerUsuarioActualId();
 
             using var stream = archivo.OpenReadStream();
-            var resultado = await _excelService.ImportarExcel(stream, usuarioId);
+            
+            // Si es CSV, convertir a Excel primero usando EPPlus
+            Stream processingStream;
+            if (extension == ".csv")
+            {
+                processingStream = await ConvertirCsvAExcel(stream);
+            }
+            else
+            {
+                processingStream = stream;
+            }
+
+            var resultado = await _excelService.ImportarExcel(processingStream, usuarioId);
+
+            if (processingStream != stream)
+            {
+                processingStream.Dispose();
+            }
 
             if (resultado.Success)
             {
@@ -61,6 +79,70 @@ public class ExcelController : Controller
             TempData["Error"] = $"Error al importar: {ex.Message}";
             return RedirectToAction("Index");
         }
+    }
+
+    private async Task<Stream> ConvertirCsvAExcel(Stream csvStream)
+    {
+        using var reader = new StreamReader(csvStream);
+        using var package = new OfficeOpenXml.ExcelPackage();
+        
+        var worksheet = package.Workbook.Worksheets.Add("Datos");
+        
+        int fila = 1;
+        while (!reader.EndOfStream)
+        {
+            var linea = await reader.ReadLineAsync();
+            if (string.IsNullOrEmpty(linea))
+            {
+                fila++;
+                continue;
+            }
+
+            // Parsear CSV (simple, asumiendo separador por comas)
+            var valores = ParsearLineaCsv(linea);
+            
+            for (int col = 0; col < valores.Length; col++)
+            {
+                worksheet.Cells[fila, col + 1].Value = valores[col];
+            }
+            
+            fila++;
+        }
+
+        var memoryStream = new MemoryStream();
+        await package.SaveAsAsync(memoryStream);
+        memoryStream.Position = 0;
+        
+        return memoryStream;
+    }
+
+    private string[] ParsearLineaCsv(string linea)
+    {
+        var resultado = new List<string>();
+        var actual = new System.Text.StringBuilder();
+        bool entreComillas = false;
+
+        for (int i = 0; i < linea.Length; i++)
+        {
+            char c = linea[i];
+
+            if (c == '"')
+            {
+                entreComillas = !entreComillas;
+            }
+            else if (c == ',' && !entreComillas)
+            {
+                resultado.Add(actual.ToString().Trim());
+                actual.Clear();
+            }
+            else
+            {
+                actual.Append(c);
+            }
+        }
+
+        resultado.Add(actual.ToString().Trim());
+        return resultado.ToArray();
     }
 
     [HttpGet]

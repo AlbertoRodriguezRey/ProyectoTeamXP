@@ -31,23 +31,23 @@
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <i class="bi bi-upload"></i> Importar Excel
+                                <i class="bi bi-upload"></i> Importar Excel/CSV
                             </h5>
                             <p class="card-text text-muted">
-                                Sube un archivo Excel con los datos del seguimiento de un cliente.
+                                Sube un archivo Excel o CSV con los datos del seguimiento de un cliente.
                             </p>
                             
                             <form asp-action="ImportarExcel" asp-controller="Excel" method="post" enctype="multipart/form-data">
                                 <div class="mb-3">
-                                    <label for="archivo" class="form-label">Selecciona el archivo Excel</label>
-                                    <input type="file" class="form-control" id="archivo" name="archivo" accept=".xlsx,.xls" required>
+                                    <label for="archivo" class="form-label">Selecciona el archivo</label>
+                                    <input type="file" class="form-control" id="archivo" name="archivo" accept=".xlsx,.xls,.csv" required>
                                     <small class="form-text text-muted">
-                                        Formatos aceptados: .xlsx, .xls (máximo 10MB)
+                                        Formatos aceptados: .xlsx, .xls, .csv (máximo 10MB)
                                     </small>
                                 </div>
                                 
                                 <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-cloud-upload"></i> Importar Excel
+                                    <i class="bi bi-cloud-upload"></i> Importar Archivo
                                 </button>
                             </form>
                         </div>
