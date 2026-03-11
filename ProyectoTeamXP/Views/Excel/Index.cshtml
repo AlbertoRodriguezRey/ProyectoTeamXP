@@ -26,28 +26,60 @@
             }
 
             <div class="row">
-                <!-- Card de Importar -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
+                <!-- Card de Importar Archivo -->
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <i class="bi bi-upload"></i> Importar Excel/CSV
+                                <i class="bi bi-upload"></i> Importar Archivo
                             </h5>
                             <p class="card-text text-muted">
-                                Sube un archivo Excel o CSV con los datos del seguimiento de un cliente.
+                                Sube un archivo Excel o CSV desde tu ordenador.
                             </p>
-                            
+
                             <form asp-action="ImportarExcel" asp-controller="Excel" method="post" enctype="multipart/form-data">
                                 <div class="mb-3">
                                     <label for="archivo" class="form-label">Selecciona el archivo</label>
                                     <input type="file" class="form-control" id="archivo" name="archivo" accept=".xlsx,.xls,.csv" required>
                                     <small class="form-text text-muted">
-                                        Formatos aceptados: .xlsx, .xls, .csv (máximo 10MB)
+                                        .xlsx, .xls, .csv
                                     </small>
                                 </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100">
+
+                                <button type="submit" class="btn btn-primary w-100 mb-2">
                                     <i class="bi bi-cloud-upload"></i> Importar Archivo
+                                </button>
+                                <button type="submit" formaction="/Excel/Diagnostico" class="btn btn-outline-secondary btn-sm w-100">
+                                    <i class="bi bi-bug"></i> Diagnosticar (ver todas las celdas)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Google Drive -->
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-google"></i> Importar desde Drive
+                            </h5>
+                            <p class="card-text text-muted">
+                                Pega la URL o ID de tu Google Sheet. Se descarga como .xlsx preservando celdas combinadas.
+                            </p>
+
+                            <form asp-action="ImportarDesdeDrive" asp-controller="Excel" method="post">
+                                <div class="mb-3">
+                                    <label for="fileId" class="form-label">URL o ID del archivo</label>
+                                    <input type="text" class="form-control" id="fileId" name="fileId" 
+                                           placeholder="https://docs.google.com/spreadsheets/d/..." required>
+                                    <small class="form-text text-muted">
+                                        Pega la URL completa o solo el ID
+                                    </small>
+                                </div>
+
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-cloud-download"></i> Importar desde Drive
                                 </button>
                             </form>
                         </div>
@@ -55,8 +87,8 @@
                 </div>
 
                 <!-- Card de Listar Clientes -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">
                                 <i class="bi bi-people"></i> Clientes con Datos
@@ -64,7 +96,7 @@
                             <p class="card-text text-muted">
                                 Ver la lista de clientes y exportar sus datos a Excel.
                             </p>
-                            
+
                             <a asp-action="ListarClientes" asp-controller="Excel" class="btn btn-success w-100">
                                 <i class="bi bi-list-ul"></i> Ver Clientes
                             </a>
@@ -77,13 +109,13 @@
             <div class="card bg-light">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="bi bi-info-circle"></i> Información sobre el formato Excel
+                        <i class="bi bi-info-circle"></i> Información
                     </h6>
                     <ul class="mb-0">
-                        <li>El archivo debe seguir el formato estándar del seguimiento TEAM XP</li>
-                        <li>Incluye: perfil del cliente, macros, medidas corporales y seguimiento diario</li>
+                        <li><strong>Archivo local:</strong> Sube .xlsx, .xls o .csv desde tu ordenador</li>
+                        <li><strong>Google Drive:</strong> Descarga directa preservando celdas combinadas y fórmulas</li>
+                        <li>El sistema lee <strong>todas</strong> las celdas resolviendo celdas combinadas automáticamente</li>
                         <li>Los datos existentes del cliente serán actualizados o reemplazados</li>
-                        <li>Puedes exportar el Excel de un cliente para usarlo como plantilla</li>
                     </ul>
                 </div>
             </div>

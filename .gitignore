@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Google Service Account - NUNCA subir a Git
+ProyectoTeamXP/Credentials/
+*.json.bak
+

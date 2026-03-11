@@ -96,11 +96,13 @@ namespace ProyectoTeamXP.Controllers
                     Email = model.Email,
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
-                    PasswordPlain_SOLO_TESTING = model.Password, // Solo para testing
                     RolId = 2, // Por defecto, rol "Cliente"
                     Activo = true,
                     FechaCreacion = DateTime.Now
                 };
+#if DEBUG
+                usuario.PasswordPlain_SOLO_TESTING = model.Password;
+#endif
 
                 await this.repoUsuarios.InsertarUsuarioAsync(usuario);
 

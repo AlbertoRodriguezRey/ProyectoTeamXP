@@ -9,19 +9,19 @@ namespace ProyectoTeamXP.Controllers;
 public class ExcelController : Controller
 {
     private readonly ExcelImportExportService _excelService;
+    private readonly GoogleDriveService _driveService;
     private readonly TeamXPDbContext _context;
 
-    public ExcelController(ExcelImportExportService excelService, TeamXPDbContext context)
+    public ExcelController(ExcelImportExportService excelService, GoogleDriveService driveService, TeamXPDbContext context)
     {
         _excelService = excelService;
+        _driveService = driveService;
         _context = context;
     }
 
-    public IActionResult Index()
-    {
-        return View();
-    }
+    public IActionResult Index() => View();
 
+    // ── Importar desde archivo subido ──
     [HttpPost]
     public async Task<IActionResult> ImportarExcel(IFormFile archivo)
     {
@@ -32,7 +32,7 @@ public class ExcelController : Controller
         }
 
         var extension = Path.GetExtension(archivo.FileName).ToLower();
-        if (extension != ".xlsx" && extension != ".xls" && extension != ".csv")
+        if (extension is not ".xlsx" and not ".xls" and not ".csv")
         {
             TempData["Error"] = "El archivo debe ser un Excel (.xlsx, .xls) o CSV (.csv)";
             return RedirectToAction("Index");
@@ -40,38 +40,31 @@ public class ExcelController : Controller
 
         try
         {
-            // Obtener el usuario actual
             var usuarioId = ObtenerUsuarioActualId();
-
             using var stream = archivo.OpenReadStream();
-            
-            // Si es CSV, convertir a Excel primero usando EPPlus
-            Stream processingStream;
-            if (extension == ".csv")
-            {
-                processingStream = await ConvertirCsvAExcel(stream);
-            }
-            else
-            {
-                processingStream = stream;
-            }
 
-            var resultado = await _excelService.ImportarExcel(processingStream, usuarioId);
+            Stream processingStream = extension == ".csv"
+                ? await _excelService.ConvertirCsvAExcel(stream)
+                : stream;
 
-            if (processingStream != stream)
+            try
             {
-                processingStream.Dispose();
-            }
+                // Usar el nuevo método basado en Cell Map (resuelve merges automáticamente)
+                var resultado = await _excelService.ImportarDesdeCellMap(processingStream, usuarioId);
 
-            if (resultado.Success)
-            {
-                TempData["Success"] = resultado.Message;
-                return RedirectToAction("Detalle", new { clienteId = resultado.ClienteId });
-            }
-            else
-            {
+                if (resultado.Success)
+                {
+                    TempData["Success"] = resultado.Message;
+                    return RedirectToAction("Detalle", new { clienteId = resultado.ClienteId });
+                }
+
                 TempData["Error"] = resultado.Message;
                 return RedirectToAction("Index");
+            }
+            finally
+            {
+                if (processingStream != stream)
+                    processingStream.Dispose();
             }
         }
         catch (Exception ex)
@@ -81,68 +74,42 @@ public class ExcelController : Controller
         }
     }
 
-    private async Task<Stream> ConvertirCsvAExcel(Stream csvStream)
+    // ── Importar directo desde Google Drive ──
+    [HttpPost]
+    public async Task<IActionResult> ImportarDesdeDrive(string fileId)
     {
-        using var reader = new StreamReader(csvStream);
-        using var package = new OfficeOpenXml.ExcelPackage();
-        
-        var worksheet = package.Workbook.Worksheets.Add("Datos");
-        
-        int fila = 1;
-        while (!reader.EndOfStream)
+        if (string.IsNullOrWhiteSpace(fileId))
         {
-            var linea = await reader.ReadLineAsync();
-            if (string.IsNullOrEmpty(linea))
-            {
-                fila++;
-                continue;
-            }
-
-            // Parsear CSV (simple, asumiendo separador por comas)
-            var valores = ParsearLineaCsv(linea);
-            
-            for (int col = 0; col < valores.Length; col++)
-            {
-                worksheet.Cells[fila, col + 1].Value = valores[col];
-            }
-            
-            fila++;
+            TempData["Error"] = "Introduce el ID del archivo de Google Drive";
+            return RedirectToAction("Index");
         }
 
-        var memoryStream = new MemoryStream();
-        await package.SaveAsAsync(memoryStream);
-        memoryStream.Position = 0;
-        
-        return memoryStream;
-    }
+        // Limpiar: el usuario puede pegar la URL completa o solo el ID
+        fileId = ExtraerFileIdDeUrl(fileId);
 
-    private string[] ParsearLineaCsv(string linea)
-    {
-        var resultado = new List<string>();
-        var actual = new System.Text.StringBuilder();
-        bool entreComillas = false;
-
-        for (int i = 0; i < linea.Length; i++)
+        try
         {
-            char c = linea[i];
+            var usuarioId = ObtenerUsuarioActualId();
 
-            if (c == '"')
+            // Descargar de Drive como .xlsx (preserva merges, fórmulas, formato)
+            using var stream = await _driveService.DescargarComoExcelAsync(fileId);
+
+            var resultado = await _excelService.ImportarDesdeCellMap(stream, usuarioId);
+
+            if (resultado.Success)
             {
-                entreComillas = !entreComillas;
+                TempData["Success"] = $"✅ Importado desde Google Drive correctamente";
+                return RedirectToAction("Detalle", new { clienteId = resultado.ClienteId });
             }
-            else if (c == ',' && !entreComillas)
-            {
-                resultado.Add(actual.ToString().Trim());
-                actual.Clear();
-            }
-            else
-            {
-                actual.Append(c);
-            }
+
+            TempData["Error"] = resultado.Message;
+            return RedirectToAction("Index");
         }
-
-        resultado.Add(actual.ToString().Trim());
-        return resultado.ToArray();
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Error con Google Drive: {ex.Message}";
+            return RedirectToAction("Index");
+        }
     }
 
     [HttpGet]
@@ -152,14 +119,46 @@ public class ExcelController : Controller
         {
             var excelBytes = await _excelService.ExportarExcel(clienteId);
             var cliente = await _context.ClientesPerfil.FindAsync(clienteId);
-            
+
             var nombreArchivo = $"{cliente?.NombreCompleto ?? "Cliente"}_Seguimiento_{DateTime.Now:yyyyMMdd}.xlsx";
-            
             return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nombreArchivo);
         }
         catch (Exception ex)
         {
             TempData["Error"] = $"Error al exportar: {ex.Message}";
+            return RedirectToAction("Index");
+        }
+    }
+
+    // ── DIAGNÓSTICO: Ver exactamente qué lee EPPlus del Excel ──
+    [HttpPost]
+    public async Task<IActionResult> Diagnostico(IFormFile archivo)
+    {
+        if (archivo == null || archivo.Length == 0)
+        {
+            TempData["Error"] = "Selecciona un archivo para diagnosticar";
+            return RedirectToAction("Index");
+        }
+
+        try
+        {
+            using var stream = archivo.OpenReadStream();
+            var extension = Path.GetExtension(archivo.FileName).ToLower();
+
+            Stream processingStream = extension == ".csv"
+                ? await _excelService.ConvertirCsvAExcel(stream)
+                : stream;
+
+            var todasLasCeldas = ExcelCellReader.LeerTodasLasCeldas(processingStream);
+
+            if (processingStream != stream) processingStream.Dispose();
+
+            ViewBag.NombreArchivo = archivo.FileName;
+            return View(todasLasCeldas);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Error al leer: {ex.Message}";
             return RedirectToAction("Index");
         }
     }
@@ -178,12 +177,10 @@ public class ExcelController : Controller
             return RedirectToAction("Index");
         }
 
-        var medidas = await _context.Set<MedidaCorporal>()
+        ViewBag.Medidas = await _context.Set<MedidaCorporal>()
             .Where(m => m.ClienteId == clienteId)
             .OrderBy(m => m.NumeroSemana)
             .ToListAsync();
-
-        ViewBag.Medidas = medidas;
 
         return View(cliente);
     }
@@ -199,16 +196,39 @@ public class ExcelController : Controller
         return View(clientes);
     }
 
+    /// <summary>
+    /// Extrae el FileId de una URL de Google Drive/Sheets o devuelve el string tal cual si ya es un ID.
+    /// Soporta: https://docs.google.com/spreadsheets/d/{ID}/edit
+    ///          https://drive.google.com/file/d/{ID}/view
+    ///          o solo el ID directo
+    /// </summary>
+    private static string ExtraerFileIdDeUrl(string input)
+    {
+        input = input.Trim();
+
+        // URL de Google Sheets: https://docs.google.com/spreadsheets/d/{ID}/...
+        if (input.Contains("/spreadsheets/d/"))
+        {
+            var start = input.IndexOf("/spreadsheets/d/") + "/spreadsheets/d/".Length;
+            var end = input.IndexOf('/', start);
+            return end > start ? input[start..end] : input[start..];
+        }
+
+        // URL de Google Drive: https://drive.google.com/file/d/{ID}/...
+        if (input.Contains("/file/d/"))
+        {
+            var start = input.IndexOf("/file/d/") + "/file/d/".Length;
+            var end = input.IndexOf('/', start);
+            return end > start ? input[start..end] : input[start..];
+        }
+
+        // Ya es un ID directo
+        return input;
+    }
+
     private int ObtenerUsuarioActualId()
     {
-        // Implementa tu lógica de autenticación aquí
-        // Por ejemplo, desde User.Claims o Session
         var userIdClaim = User.FindFirst("UsuarioId")?.Value;
-        
-        if (int.TryParse(userIdClaim, out int userId))
-            return userId;
-
-        // Por defecto retorna 1 (ajusta según tu lógica)
-        return 1;
+        return int.TryParse(userIdClaim, out int userId) ? userId : 1;
     }
 }

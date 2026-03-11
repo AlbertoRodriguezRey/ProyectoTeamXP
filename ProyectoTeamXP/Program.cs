@@ -10,14 +10,16 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
 
 string connectionString = builder.Configuration.GetConnectionString("TeamXPDatabase");
-builder.Services.AddTransient<RepositoryUsuarios>();
-builder.Services.AddTransient<RepositoryClientes>();
-builder.Services.AddTransient<RepositorySeguimiento>();
-builder.Services.AddTransient<RepositoryNutricion>();
-builder.Services.AddTransient<RepositoryRutinas>();
-builder.Services.AddTransient<RepositoryFeedback>();
-builder.Services.AddTransient<RepositoryRecursos>();
+// Scoped: comparten el mismo DbContext por request (antes era Transient → bug sutil)
+builder.Services.AddScoped<RepositoryUsuarios>();
+builder.Services.AddScoped<RepositoryClientes>();
+builder.Services.AddScoped<RepositorySeguimiento>();
+builder.Services.AddScoped<RepositoryNutricion>();
+builder.Services.AddScoped<RepositoryRutinas>();
+builder.Services.AddScoped<RepositoryFeedback>();
+builder.Services.AddScoped<RepositoryRecursos>();
 builder.Services.AddScoped<ExcelImportExportService>();
+builder.Services.AddSingleton<GoogleDriveService>();
 builder.Services.AddDbContext<TeamXPDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddControllersWithViews();
@@ -41,10 +43,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+// Session ANTES de Authorization (la sesión debe estar disponible durante la autorización)
+app.UseSession();
 app.UseAuthorization();
 
 app.MapStaticAssets();
-app.UseSession();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")

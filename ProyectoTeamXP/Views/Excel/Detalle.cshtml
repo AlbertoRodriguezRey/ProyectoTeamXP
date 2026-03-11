@@ -3,155 +3,223 @@
 @{
     ViewData["Title"] = "Detalle del Cliente";
     var medidas = ViewBag.Medidas as List<ProyectoTeamXP.Models.MedidaCorporal>;
+    var seguimientos = Model.SeguimientoDiario?.OrderByDescending(s => s.Fecha).ToList()
+                     ?? new List<ProyectoTeamXP.Models.SeguimientoDiario>();
 }
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>
-                    <i class="bi bi-person-badge"></i> @Model.NombreCompleto
-                </h1>
-                <div>
-                    <a asp-action="ExportarExcel" asp-route-clienteId="@Model.Id" class="btn btn-success">
-                        <i class="bi bi-download"></i> Exportar Excel
-                    </a>
-                    <a asp-action="ListarClientes" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
-                    </a>
+<div class="container-fluid mt-4">
+    <!-- Cabecera -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-person-badge"></i> @Model.NombreCompleto</h2>
+        <div class="d-flex gap-2">
+            <a asp-action="ExportarExcel" asp-route-clienteId="@Model.Id" class="btn btn-success btn-sm">
+                <i class="bi bi-download"></i> Exportar Excel
+            </a>
+            <a asp-action="ListarClientes" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="detalleTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-perfil" type="button">
+                <i class="bi bi-person-circle"></i> Perfil
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-macros" type="button">
+                <i class="bi bi-pie-chart"></i> Macros
+                <span class="badge bg-success">@Model.Macros.Count</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-medidas" type="button">
+                <i class="bi bi-rulers"></i> Medidas
+                <span class="badge bg-warning text-dark">@(medidas?.Count ?? 0)</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-seguimiento" type="button">
+                <i class="bi bi-calendar-check"></i> Seguimiento
+                <span class="badge bg-info">@seguimientos.Count días</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content border border-top-0 rounded-bottom p-3" id="detalleTabContent">
+
+        <!-- ═══ PERFIL ═══ -->
+        <div class="tab-pane fade show active" id="tab-perfil">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <tr><th>Nombre</th><td>@Model.NombreCompleto</td></tr>
+                        <tr><th>Edad</th><td>@(Model.Edad?.ToString() ?? "N/A")</td></tr>
+                        <tr><th>Peso Inicial</th><td>@(Model.PesoInicial?.ToString() ?? "N/A") kg</td></tr>
+                        <tr><th>Fecha de Inicio</th><td>@(Model.FechaInicioPrograma?.ToString("dd/MM/yyyy") ?? "N/A")</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <tr><th>Objetivos</th><td>@(Model.Objetivos ?? "N/A")</td></tr>
+                        <tr><th>Pasos</th><td>@(Model.ObjetivoPasos ?? "N/A")</td></tr>
+                        <tr><th>Cardio</th><td>@(Model.ObjetivoCardio ?? "N/A")</td></tr>
+                        <tr><th>Suplementación</th><td>@(Model.Suplementacion ?? "N/A")</td></tr>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Perfil -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Perfil del Cliente</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Nombre:</strong> @Model.NombreCompleto</p>
-                            <p><strong>Edad:</strong> @(Model.Edad?.ToString() ?? "N/A")</p>
-                            <p><strong>Peso Inicial:</strong> @(Model.PesoInicial?.ToString() ?? "N/A") kg</p>
-                            <p><strong>Fecha de Inicio:</strong> @(Model.FechaInicioPrograma?.ToString("dd/MM/yyyy") ?? "N/A")</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Objetivos:</strong> @(Model.Objetivos ?? "N/A")</p>
-                            <p><strong>Pasos:</strong> @(Model.ObjetivoPasos ?? "N/A")</p>
-                            <p><strong>Cardio:</strong> @(Model.ObjetivoCardio ?? "N/A")</p>
-                            <p><strong>Suplementación:</strong> @(Model.Suplementacion ?? "N/A")</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Macros -->
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Macronutrientes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        @foreach (var macro in Model.Macros.OrderBy(m => m.TipoDia))
-                        {
-                            <div class="col-md-6">
-                                <h6 class="text-uppercase">@macro.TipoDia</h6>
-                                <ul class="list-unstyled">
-                                    <li><strong>Proteína:</strong> @(macro.Proteina?.ToString() ?? "0")g</li>
-                                    <li><strong>Grasa:</strong> @(macro.Grasa?.ToString() ?? "0")g</li>
-                                    <li><strong>Carbohidratos:</strong> @(macro.Carbohidratos?.ToString() ?? "0")g</li>
-                                    <li><strong>Calorías:</strong> @(macro.Calorias?.ToString() ?? "0") kcal</li>
-                                </ul>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Medidas Corporales -->
-            @if (medidas != null && medidas.Any())
+        <!-- ═══ MACROS ═══ -->
+        <div class="tab-pane fade" id="tab-macros">
+            @if (Model.Macros.Any())
             {
-                <div class="card mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="bi bi-rulers"></i> Medidas Corporales</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Semana</th>
-                                        <th>Fecha</th>
-                                        <th>Pecho</th>
-                                        <th>Brazo</th>
-                                        <th>Cintura (sobre ombligo)</th>
-                                        <th>Ombligo</th>
-                                        <th>Cintura (bajo ombligo)</th>
-                                        <th>Cadera</th>
-                                        <th>Muslos</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var medida in medidas)
-                                    {
-                                        <tr>
-                                            <td>@medida.NumeroSemana</td>
-                                            <td>@(medida.Fecha?.ToString("dd/MM/yyyy") ?? "N/A")</td>
-                                            <td>@(medida.Pecho?.ToString() ?? "-") cm</td>
-                                            <td>@(medida.Brazo?.ToString() ?? "-") cm</td>
-                                            <td>@(medida.CinturaSobreOmbligo?.ToString() ?? "-") cm</td>
-                                            <td>@(medida.CinturaOmbligo?.ToString() ?? "-") cm</td>
-                                            <td>@(medida.CinturaBajoOmbligo?.ToString() ?? "-") cm</td>
-                                            <td>@(medida.Cadera?.ToString() ?? "-") cm</td>
-                                            <td>@(medida.Muslos?.ToString() ?? "-") cm</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                <div class="row">
+                    @foreach (var macro in Model.Macros.OrderBy(m => m.TipoDia))
+                    {
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white text-uppercase">
+                                    <i class="bi bi-fire"></i> @macro.TipoDia
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-3">
+                                            <h4 class="text-primary">@(macro.Proteina?.ToString("0") ?? "-")</h4>
+                                            <small class="text-muted">Proteína (g)</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h4 class="text-warning">@(macro.Grasa?.ToString("0") ?? "-")</h4>
+                                            <small class="text-muted">Grasa (g)</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h4 class="text-info">@(macro.Carbohidratos?.ToString("0") ?? "-")</h4>
+                                            <small class="text-muted">Carbos (g)</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h4 class="text-danger">@(macro.Calorias?.ToString() ?? "-")</h4>
+                                            <small class="text-muted">Calorías</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    }
                 </div>
             }
-
-            <!-- Seguimiento Diario -->
-            @if (Model.SeguimientoDiario.Any())
+            else
             {
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Seguimiento Diario (últimos 10 días)</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Peso</th>
-                                        <th>Entreno</th>
-                                        <th>Rendimiento</th>
-                                        <th>Pasos</th>
-                                        <th>Sueño</th>
-                                        <th>Calorías</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var seg in Model.SeguimientoDiario.OrderByDescending(s => s.Fecha).Take(10))
-                                    {
-                                        <tr>
-                                            <td>@seg.Fecha.ToString("dd/MM/yyyy")</td>
-                                            <td>@(seg.Peso?.ToString() ?? "-") kg</td>
-                                            <td>@(seg.DiaEntreno ?? "-")</td>
-                                            <td>@(seg.RendimientoSesion ?? "-")</td>
-                                            <td>@(seg.PasosRealizados?.ToString() ?? "-")</td>
-                                            <td>@(seg.HorasSueno?.ToString() ?? "-")h</td>
-                                            <td>@(seg.TotalCalorias?.ToString() ?? "-") kcal</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="alert alert-secondary">No hay datos de macronutrientes importados.</div>
+            }
+        </div>
+
+        <!-- ═══ MEDIDAS CORPORALES ═══ -->
+        <div class="tab-pane fade" id="tab-medidas">
+            @if (medidas != null && medidas.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="table-warning">
+                            <tr>
+                                <th>Semana</th>
+                                <th>Fecha</th>
+                                <th>Pecho</th>
+                                <th>Brazo</th>
+                                <th>Sobre ombligo</th>
+                                <th>Ombligo</th>
+                                <th>Bajo ombligo</th>
+                                <th>Cadera</th>
+                                <th>Muslos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in medidas)
+                            {
+                                <tr>
+                                    <td><strong>@(m.NumeroSemana == 0 ? "Inicio" : $"Semana {m.NumeroSemana * 2}")</strong></td>
+                                    <td>@(m.Fecha?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td>@(m.Pecho?.ToString() ?? "-")</td>
+                                    <td>@(m.Brazo?.ToString() ?? "-")</td>
+                                    <td>@(m.CinturaSobreOmbligo?.ToString() ?? "-")</td>
+                                    <td>@(m.CinturaOmbligo?.ToString() ?? "-")</td>
+                                    <td>@(m.CinturaBajoOmbligo?.ToString() ?? "-")</td>
+                                    <td>@(m.Cadera?.ToString() ?? "-")</td>
+                                    <td>@(m.Muslos?.ToString() ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary">No hay medidas corporales importadas.</div>
+            }
+        </div>
+
+        <!-- ═══ SEGUIMIENTO DIARIO (COMPLETO) ═══ -->
+        <div class="tab-pane fade" id="tab-seguimiento">
+            @if (seguimientos.Any())
+            {
+                <div class="mb-2 text-muted">
+                    <small>Mostrando <strong>@seguimientos.Count</strong> días de seguimiento</small>
+                </div>
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered table-hover" style="font-size: 0.8rem;">
+                        <thead class="table-info sticky-top">
+                            <tr>
+                                <th>Sem</th>
+                                <th>Fecha</th>
+                                <th>Peso</th>
+                                <th>Hora</th>
+                                <th>Prot</th>
+                                <th>Grasa</th>
+                                <th>Carbs</th>
+                                <th>Kcal</th>
+                                <th>Entreno</th>
+                                <th>Rendimiento</th>
+                                <th>Pasos</th>
+                                <th>Cardio</th>
+                                <th>Sueño</th>
+                                <th>Calidad</th>
+                                <th>Apetito</th>
+                                <th>Estrés</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in seguimientos)
+                            {
+                                <tr>
+                                    <td>@(s.NumeroSemana?.ToString() ?? "")</td>
+                                    <td><strong>@s.Fecha.ToString("dd/MM")</strong></td>
+                                    <td>@(s.Peso?.ToString("0.0") ?? "-")</td>
+                                    <td>@(s.HoraPesaje?.ToString(@"h\:mm") ?? "-")</td>
+                                    <td>@(s.Proteina?.ToString("0") ?? "-")</td>
+                                    <td>@(s.Grasa?.ToString("0") ?? "-")</td>
+                                    <td>@(s.Carbohidratos?.ToString("0") ?? "-")</td>
+                                    <td>@(s.TotalCalorias?.ToString() ?? "-")</td>
+                                    <td>@(s.DiaEntreno ?? "-")</td>
+                                    <td>@(s.RendimientoSesion ?? "-")</td>
+                                    <td>@(s.PasosRealizados?.ToString("#,0") ?? "-")</td>
+                                    <td>@(s.DuracionCardio ?? "-")</td>
+                                    <td>@(s.HorasSueno?.ToString("0.#") ?? "-")h</td>
+                                    <td>@(s.CalidadSueno ?? "-")</td>
+                                    <td>@(s.Apetito ?? "-")</td>
+                                    <td>@(s.NivelEstres ?? "-")</td>
+                                    <td><small>@(s.Notas ?? "")</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary">No hay datos de seguimiento diario importados.</div>
             }
         </div>
     </div>

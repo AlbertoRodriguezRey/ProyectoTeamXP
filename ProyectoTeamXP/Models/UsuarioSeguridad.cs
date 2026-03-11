@@ -22,9 +22,12 @@ public class UsuarioSeguridad
     [Column("PasswordSalt")]
     public byte[] PasswordSalt { get; set; } = Array.Empty<byte>();
 
-    // Campo SOLO para testing (Borrar en Producción)
+    // Campo SOLO para testing — no se compila en Release/Producción
+#if DEBUG
     [Column("PasswordPlain_SOLO_TESTING")]
+    [NotMapped] // No mapear a BD ni siquiera en debug, solo se usa para seeder local
     public string? PasswordPlain_SOLO_TESTING { get; set; }
+#endif
 
     [Column("RolId")]
     [ForeignKey("Rol")]

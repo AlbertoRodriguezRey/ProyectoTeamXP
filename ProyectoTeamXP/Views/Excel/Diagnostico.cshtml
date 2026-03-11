@@ -1,0 +1,172 @@
+@model Dictionary<string, List<ProyectoTeamXP.Models.CellData>>
+
+@{
+    ViewData["Title"] = "Diagnóstico Excel";
+
+    var resumen = Model.ToDictionary(
+        hoja => hoja.Key,
+        hoja =>
+        {
+            var celdas = hoja.Value;
+            var nombre = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Contains("NOMBRE", StringComparison.OrdinalIgnoreCase));
+            var macros = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Contains("MACROS", StringComparison.OrdinalIgnoreCase));
+            var medidas = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Contains("MEDIDAS", StringComparison.OrdinalIgnoreCase));
+            var inicio = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Equals("INICIO", StringComparison.OrdinalIgnoreCase));
+            var semana = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Equals("SEMANA", StringComparison.OrdinalIgnoreCase) && c.Col == 1);
+
+            return new
+            {
+                Hoja = hoja.Key,
+                TotalCeldas = celdas.Count,
+                MaxFila = celdas.Any() ? celdas.Max(c => c.Row) : 0,
+                MaxColumna = celdas.Any() ? celdas.Max(c => c.Col) : 0,
+                Secciones = new
+                {
+                    Nombre = nombre == null ? null : new { nombre.Address, nombre.Row, nombre.Col, nombre.RawText },
+                    Macros = macros == null ? null : new { macros.Address, macros.Row, macros.Col, macros.RawText },
+                    Medidas = medidas == null ? null : new { medidas.Address, medidas.Row, medidas.Col, medidas.RawText },
+                    Inicio = inicio == null ? null : new { inicio.Address, inicio.Row, inicio.Col, inicio.RawText },
+                    Semana = semana == null ? null : new { semana.Address, semana.Row, semana.Col, semana.RawText }
+                }
+            };
+        });
+
+    var resumenJson = System.Text.Json.JsonSerializer.Serialize(resumen, new System.Text.Json.JsonSerializerOptions
+    {
+        WriteIndented = true
+    });
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-bug"></i> Diagnóstico: @ViewBag.NombreArchivo</h2>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" id="btnDescargarResumen">
+                <i class="bi bi-download"></i> Descargar resumen (JSON)
+            </button>
+            <a asp-action="Index" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Pestañas encontradas:</strong> @Model.Count
+        — <strong>Total celdas con datos:</strong> @Model.Values.Sum(v => v.Count)
+    </div>
+
+    @foreach (var hoja in Model)
+    {
+        var celdas = hoja.Value;
+        var maxRow = celdas.Any() ? celdas.Max(c => c.Row) : 0;
+        var maxCol = celdas.Any() ? celdas.Max(c => c.Col) : 0;
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <span>
+                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                    <strong>@hoja.Key</strong>
+                </span>
+                <span class="badge bg-light text-dark">
+                    @celdas.Count celdas · @maxRow filas · @maxCol columnas
+                </span>
+            </div>
+            <div class="card-body p-0" style="overflow-x: auto;">
+                @if (celdas.Any())
+                {
+                    <!-- Secciones clave detectadas -->
+                    var nombre = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Contains("NOMBRE", StringComparison.OrdinalIgnoreCase));
+                    var inicio = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Equals("INICIO", StringComparison.OrdinalIgnoreCase));
+                    var semana = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Equals("SEMANA", StringComparison.OrdinalIgnoreCase) && c.Col == 1);
+                    var medidas = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Contains("MEDIDAS", StringComparison.OrdinalIgnoreCase));
+                    var macros = celdas.FirstOrDefault(c => c.RawText != null && c.RawText.Contains("MACROS", StringComparison.OrdinalIgnoreCase));
+                    <div class="p-3 bg-light border-bottom">
+                        <small>
+                            <strong>Secciones detectadas:</strong>
+                            @if (nombre != null) { <span class="badge bg-primary me-1">NOMBRE → @nombre.Address (fila @nombre.Row, col @nombre.Col)</span> }
+                            @if (macros != null) { <span class="badge bg-success me-1">MACROS → @macros.Address (fila @macros.Row, col @macros.Col)</span> }
+                            @if (medidas != null) { <span class="badge bg-warning text-dark me-1">MEDIDAS → @medidas.Address (fila @medidas.Row, col @medidas.Col)</span> }
+                            @if (inicio != null) { <span class="badge bg-info me-1">INICIO → @inicio.Address (fila @inicio.Row, col @inicio.Col)</span> }
+                            @if (semana != null) { <span class="badge bg-danger me-1">SEMANA → @semana.Address (fila @semana.Row, col @semana.Col)</span> }
+                        </small>
+                    </div>
+
+                    <!-- Tabla de celdas con datos -->
+                    <table class="table table-sm table-bordered table-hover mb-0" style="font-size: 0.75rem;">
+                        <thead class="table-secondary sticky-top">
+                            <tr>
+                                <th style="width:60px">Celda</th>
+                                <th style="width:40px">Fila</th>
+                                <th style="width:40px">Col</th>
+                                <th>Texto visible</th>
+                                <th>Valor interno</th>
+                                <th style="width:60px">Merged</th>
+                                <th>Fórmula</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var celda in celdas.OrderBy(c => c.Row).ThenBy(c => c.Col))
+                            {
+                                var rowClass = celda.IsMerged ? "table-warning" : "";
+                                var isSection = celda.RawText != null && (
+                                    celda.RawText.Contains("NOMBRE", StringComparison.OrdinalIgnoreCase) ||
+                                    celda.RawText.Contains("MACROS", StringComparison.OrdinalIgnoreCase) ||
+                                    celda.RawText.Contains("MEDIDAS", StringComparison.OrdinalIgnoreCase) ||
+                                    celda.RawText.Equals("INICIO", StringComparison.OrdinalIgnoreCase) ||
+                                    celda.RawText.Equals("SEMANA", StringComparison.OrdinalIgnoreCase));
+                                if (isSection) { rowClass = "table-info fw-bold"; }
+
+                                <tr class="@rowClass">
+                                    <td><code>@celda.Address</code></td>
+                                    <td>@celda.Row</td>
+                                    <td>@celda.Col</td>
+                                    <td>@(celda.RawText ?? "<em class='text-muted'>vacío</em>")</td>
+                                    <td>
+                                        @if (celda.Value != null)
+                                        {
+                                            <span class="text-primary">@celda.Value</span>
+                                            <small class="text-muted">(@celda.Value.GetType().Name)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (celda.IsMerged)
+                                        {
+                                            <span class="badge bg-warning text-dark">SÍ</span>
+                                        }
+                                    </td>
+                                    <td><code class="text-success">@celda.Formula</code></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="p-3 text-muted">Hoja vacía</div>
+                }
+            </div>
+
+<script>
+    (function() {
+        const resumen = @Html.Raw(resumenJson);
+        const btn = document.getElementById('btnDescargarResumen');
+
+        if (!btn) return;
+
+        btn.addEventListener('click', function() {
+            const contenido = JSON.stringify(resumen, null, 2);
+            const blob = new Blob([contenido], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diagnostico_resumen_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(url);
+        });
+    })();
+</script>
+        </div>
+    }
+</div>
